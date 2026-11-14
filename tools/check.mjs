@@ -17,10 +17,10 @@ const OFFICIAL = ["law.go.kr", "likms.assembly.go.kr", "fsc.go.kr", "fss.or.kr",
   "coso.org", "sec.gov", "govinfo.gov", "pcaobus.org", "theiia.org", "iso.org", "fsa.go.jp", "frc.org.uk", "acfe.com", "iaasb.org"];
 const KEY = /\[([KW]\d{2})\]/g;
 const HEADER = "| 키 | 정식 명칭 | 조문·요지 | 시행·개정 | 변동 | 적용 대상 | URL | 조회일 | 확인 |";
-const MARKERS = [[/^(금융회사|공공)/, "(비교 — 일반 기업 적용 아님)"], [/^상장회사/, "(상장회사 대상)"], [/^사업보고서/, "(사업보고서 제출 대상)"], [/^외부감사/, "(외부감사 대상 중 일부 — 적용 제외 있음)"], [/^대규모/, "(대규모 회사 판례)"]];
+const MARKERS = [[/의무 아님/, "(자율 — 의무 아님)"], [/^(금융회사|공공)/, "(비교 — 일반 기업 적용 아님)"], [/^상장회사/, "(상장회사 대상)"], [/^사업보고서/, "(사업보고서 제출 대상)"], [/^외부감사/, "(외부감사 대상 중 일부 — 적용 제외 있음)"], [/^대규모/, "(대규모 회사 판례)"]];
 const GENERAL = /^(주식회사|사업자|누구나)/;
 const NO_LAW = "일반 기업 법정 기준 확인 못 함";
-const BOUNDARY = ["go-icfr", "go-controllership", "go-accounting", "go-compliance-and-legal", "go-security", "go-mis", "go-finance", "go-strategy", "go-hr", "go-hse", "go-general-affairs", "go-scm", "go-data-analytics", "go-corporate-communications", "go-resilience", "go-operations", "go-ai", "go-esg", "go-tax"];
+
 
 function parseCurriculum(text) {
   const modules = new Map();
@@ -64,8 +64,7 @@ function parseCurriculum(text) {
     state.set(id, 2);
   };
   for (const id of modules.keys()) visit(id, []);
-  for (const ws of BOUNDARY) if (!boundaryText.some((t) => t.includes(ws))) problems.push(`경계 워크스페이스 ${ws}가 「경계·연결」에 없음`);
-  return { modules, problems, keysUsed, domesticFields };
+  return { modules, problems, keysUsed, domesticFields, boundaryText };
 }
 
 function parseSources(text) {
@@ -105,7 +104,10 @@ function findTemplateMarkup(name, text) {
 }
 
 function main() {
-  const { modules, problems, keysUsed, domesticFields } = parseCurriculum(read("curriculum/map.md"));
+  const { modules, problems, keysUsed, domesticFields, boundaryText } = parseCurriculum(read("curriculum/map.md"));
+  const overlap = [...read("docs/build/gates.md").matchAll(/^\| (go-[a-z-]+) \| 있음 \|/gm)].map((m) => m[1]);
+  if (overlap.length === 0) errors.push("gates.md 경계 대조 표에서 「있음」 영역을 찾지 못함");
+  for (const ws of overlap) if (!boundaryText.some((t) => t.includes(ws))) errors.push(`경계 워크스페이스 ${ws}가 「경계·연결」에 없음`);
   errors.push(...problems);
   const src = parseSources(read("curriculum/sources.md"));
   errors.push(...src.problems);
@@ -114,7 +116,7 @@ function main() {
     for (const m of text.matchAll(KEY)) {
       const row = src.rows.get(m[1]);
       if (!row) continue;
-      if (GENERAL.test(row[4])) { general++; continue; }
+      if (GENERAL.test(row[4]) && !/의무 아님/.test(row[4])) { general++; continue; }
       const mk = MARKERS.find(([re]) => re.test(row[4]));
       if (!mk) { errors.push(`${id}: ${m[1]} 적용 대상 분류 불가(${row[4]})`); continue; }
       if (!text.slice(m.index + m[0].length).startsWith(mk[1])) errors.push(`${id}: ${m[1]} 바로 뒤에 ${mk[1]} 표시 없음`);
