@@ -1,17 +1,29 @@
 {
   "schema": 1,
   "learner": {
-    "name": "",
     "language": "ko",
     "goal": "",
     "background": "",
     "time": "",
-    "interests": []
+    "interests": [],
+    "org": {
+      "listed": null,
+      "financial": null,
+      "audit_committee": null,
+      "capital_under_1bn": null,
+      "employees_5plus": null,
+      "industry": "",
+      "assets_band": "",
+      "external_audit": null,
+      "business_report_filer": null,
+      "personal_info_processor": null
+    }
   },
   "current": {
     "module": null,
     "path": null,
-    "pending_probe": null
+    "pending_probe": null,
+    "deferred": null
   },
   "modules": {},
   "gaps": [],
@@ -22,5 +34,9 @@
     "at": null,
     "history": []
   },
-  "preferences": []
+  "preferences": [],
+  "notices": {
+    "advice": null,
+    "confidentiality": null
+  }
 }
