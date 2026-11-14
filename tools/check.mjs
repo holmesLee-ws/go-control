@@ -105,7 +105,28 @@ function findTemplateMarkup(name, text) {
   return hits;
 }
 
+function checkStateFile(path) {
+  const text = readFileSync(path, "utf8");
+  const probs = [];
+  JSON.parse(text);
+  const seen = new Map();
+  let inModules = false;
+  for (const line of text.split("\n")) {
+    if (/^  "modules": \{/.test(line)) { inModules = true; continue; }
+    if (inModules && /^  \}/.test(line)) { inModules = false; continue; }
+    const m = inModules && line.match(/^    "([A-Z]\d+)": \{/);
+    if (m) { if (seen.has(m[1])) probs.push(`state.json modules 중복 키 ${m[1]}`); seen.set(m[1], true); }
+  }
+  return probs;
+}
+
 function main() {
+  const si = process.argv.indexOf("--state");
+  if (si > 0) {
+    const probs = checkStateFile(process.argv[si + 1]);
+    if (probs.length) { console.error(probs.map((e) => `FAIL ${e}`).join("\n")); process.exit(1); }
+    console.log("OK state.json 중복 키 없음"); return;
+  }
   const { modules, problems, keysUsed, domesticFields, boundaryText } = parseCurriculum(read("curriculum/map.md"));
   const overlap = [...read("docs/build/gates.md").matchAll(/^\| (go-[a-z-]+) \| 있음 \|/gm)].map((m) => m[1]);
   if (overlap.length === 0) errors.push("gates.md 경계 대조 표에서 「있음」 영역을 찾지 못함");
