@@ -67,6 +67,7 @@
 - 모듈이 끝날 때, 페이스 판단이 바뀔 때, 세션을 마칠 때 `state.json`을 **그 차례 안에** 고친다. 나중으로 미루지 않는다.
 - 오답이나 힌트 의존이 나오면 그 차례에 `gaps`에 적고 페이스 표에 따라 `pace`를 고친다. 예측이 일부만 틀린 경우도 오답이다.
 - 모듈을 시작하면 `current.module`과 `current.path`(`skip`·`gap`·`full` 중 하나)를 적는다. 진행 중인 모듈을 두고 학습자가 다른 모듈로 옮기면 앞 모듈은 `in_progress`로 두고 `current`만 바꾼다. 탐침을 내면 `current.pending_probe`에 문제를 적고, 답을 받으면 `null`로 되돌린다.
+- 진도·현황을 물으면 `learner/state.json`을 근거로 답하고(스킬로 부르지 않았어도) 기억으로 답하지 않는다.
 - `learner/` 아래 파일은 Write·Edit 도구로만 고친다. 스크립트(Bash·python 등)로 JSON을 고치지 않는다 — 권한 창이 뜬다. Bash는 HTML을 여는 `open learner/studio/...html` 같은 명령에만 쓴다.
 - 기록 중이라는 말을 학습자에게 하지 않는다.
 - 진도를 물으면 `state.json`을 근거로 답한다. 기억으로 답하지 않는다.

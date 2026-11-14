@@ -80,6 +80,9 @@ function parseSources(text) {
     if (rows.has(m[1])) problems.push(`대장 ${m[1]}: 중복 키`);
     rows.set(m[1], cells);
     if (cells.length !== 8) problems.push(`대장 ${m[1]}: 칸 수 ${cells.length}(8이어야 함)`);
+    for (const [i, n] of [[0, "정식 명칭"], [1, "조문·요지"], [2, "시행·개정"]]) if (!cells[i]) problems.push(`대장 ${m[1]}: ${n} 없음`);
+    if (!/^https:\/\/\S+$/.test(cells[5] || "")) problems.push(`대장 ${m[1]}: URL 칸 형식`);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(cells[6] || "") || isNaN(Date.parse(cells[6])) || new Date(cells[6]) > new Date()) problems.push(`대장 ${m[1]}: 조회일 칸 형식`);
     if (!["예", "아니오"].includes(cells[3])) problems.push(`대장 ${m[1]}: 변동 칸은 예/아니오`);
     if (!cells[4]) problems.push(`대장 ${m[1]}: 적용 대상 없음`);
     if (!["본문", "본문(likms)", "검색"].includes(cells[7])) problems.push(`대장 ${m[1]}: 확인 칸 값 오류`);
@@ -93,13 +96,12 @@ function parseSources(text) {
 }
 
 function findVisualAssets(files) {
-  const allowedJs = /^tools\/.*\.m?js$/;
-  return files.filter((f) => /\.(html?|css|svg|png|jpe?g|gif|webp|avif)$/i.test(f) || (/\.m?js$/i.test(f) && !allowedJs.test(f)));
+  return files.filter((f) => /\.(x?html?|css|svgz?|png|jpe?g|gif|webp|avif|ico|[cm]?jsx?|tsx?)$/i.test(f) && f !== "tools/check.mjs");
 }
 
 function findTemplateMarkup(name, text) {
   const hits = [];
-  for (const m of text.matchAll(/(```|~~~)[\s\S]*?\1/g)) if (/<(!doctype|html|svg|style|canvas|script)\b/i.test(m[0])) hits.push(name);
+  if (/<(!doctype|html|svg|style|canvas|script)\b/i.test(text)) hits.push(name);
   return hits;
 }
 
@@ -107,7 +109,7 @@ function main() {
   const { modules, problems, keysUsed, domesticFields, boundaryText } = parseCurriculum(read("curriculum/map.md"));
   const overlap = [...read("docs/build/gates.md").matchAll(/^\| (go-[a-z-]+) \| 있음 \|/gm)].map((m) => m[1]);
   if (overlap.length === 0) errors.push("gates.md 경계 대조 표에서 「있음」 영역을 찾지 못함");
-  for (const ws of overlap) if (!boundaryText.some((t) => t.includes(ws))) errors.push(`경계 워크스페이스 ${ws}가 「경계·연결」에 없음`);
+  for (const ws of overlap) if (!boundaryText.some((t) => new RegExp(`${ws}(?![a-z-])`).test(t))) errors.push(`경계 워크스페이스 ${ws}가 「경계·연결」에 없음`);
   errors.push(...problems);
   const src = parseSources(read("curriculum/sources.md"));
   errors.push(...src.problems);
@@ -129,7 +131,7 @@ function main() {
 
   const files = execFileSync("git", ["ls-files", "--cached", "--others", "--exclude-standard", "-z"], { cwd: root, encoding: "utf8" }).split("\0").filter(Boolean);
   for (const f of findVisualAssets(files)) errors.push(`미리 만든 시각 자료 금지: ${f}`);
-  for (const f of files.filter((x) => x.endsWith(".md") && existsSync(join(root, x)))) for (const n of findTemplateMarkup(f, read(f))) errors.push(`복사용 마크업 금지: ${n}`);
+  for (const f of files.filter((x) => x.endsWith(".md") && !x.startsWith("docs/build/") && existsSync(join(root, x)))) for (const n of findTemplateMarkup(f, read(f))) errors.push(`복사용 마크업 금지: ${n}`);
 
   for (const p of [".claude/settings.json", "learner-template/state.json"]) {
     try { JSON.parse(read(p)); } catch (e) { errors.push(`${p}: JSON 오류 ${e.constructor.name}`); }

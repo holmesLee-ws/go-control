@@ -1,2 +1,6 @@
 learner/
 .DS_Store
+.claude/settings.local.json
+CLAUDE.local.md
+Thumbs.db
+desktop.ini

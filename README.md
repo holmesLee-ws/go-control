@@ -15,6 +15,8 @@ cd ~/Desktop
 gh repo clone holmesLee-ws/go-control
 ```
 
+Windows에서 바탕 화면이 OneDrive 아래에 있으면 `~\OneDrive\Desktop`으로 이동하세요.
+
 **Claude Code**
 
 ```bash
